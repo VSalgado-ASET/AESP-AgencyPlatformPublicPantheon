@@ -29,3 +29,52 @@ function az_gov_sliver_uninstall() {
 //  variable_del('az_gov_sliver_scope');
 //  variable_del('az_gov_sliver_quiet');
 }
+
+/**
+ * Implements hook_update_N().
+ * 
+ * This hook update will go through the files color directory and replace any image of the logo with the updated one.
+ */
+function az_gov_sliver_7001() {
+  // Define the path to the new image within your module.
+  $new_image_path = DRUPAL_ROOT . '/sites/all/modules/custom/az_gov_sliver/images/logo.png';
+
+  // Define the base directory where the color folders are located.
+  $base_directory = DRUPAL_ROOT . '/sites/default/files/color';
+
+  // Check if the base directory exists.
+  if (is_dir($base_directory)) {
+    // Scan the base directory for subdirectories.
+    $directories = scandir($base_directory);
+    foreach ($directories as $directory) {
+      if ($directory != '.' && $directory != '..' && is_dir($base_directory . '/' . $directory)) {
+        // Define the destination path for logo.svg in the current subdirectory.
+        $destination_path = $base_directory . '/' . $directory . '/logo.png';
+
+        // Replace the logo.svg file if it exists.
+        if (file_exists($destination_path)) {
+          if (file_exists($new_image_path)) {
+            if (copy($new_image_path, $destination_path)) {
+              // Log success.
+              watchdog('az_gov_sliver', 'Replaced the logo image in @destination.', array('@destination' => $destination_path), WATCHDOG_INFO);
+            }
+            else {
+              // Log failure to copy.
+              watchdog('az_gov_sliver', 'Failed to copy the new logo to @destination.', array('@destination' => $destination_path), WATCHDOG_ERROR);
+            }
+          }
+          else {
+            // Log missing source file.
+            watchdog('az_gov_sliver', 'The new image file does not exist at @source.', array('@source' => $new_image_path), WATCHDOG_ERROR);
+          }
+        }
+      }
+    }
+  }
+  else {
+    // Log that the base directory does not exist.
+    watchdog('az_gov_sliver', 'The directory @directory does not exist, skipping image replacement.', array('@directory' => $base_directory), WATCHDOG_INFO);
+  }
+}
+
+
